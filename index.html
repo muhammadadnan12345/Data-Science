@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNIST Digit Classifier</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>MNIST Digit Classifier</h1>
+        
+        <div class="upload-area">
+            <label for="fileUpload" class="upload-label">Upload an image of a digit:</label>
+            <input type="file" id="fileUpload" accept="image/*" onchange="previewImage()">
+        </div>
+
+        <div class="preview-area">
+            <h3>Preview:</h3>
+            <img id="previewImage" alt="Image Preview">
+        </div>
+
+        <button onclick="predict()" class="predict-btn">Predict</button>
+
+        <div id="result" class="result-container">
+            <h2>Prediction: <span id="prediction">-</span></h2>
+            <p>Confidence: <span id="confidence">-</span>%</p>
+        </div>
+    </div>
+
+    <script>
+        let uploadedImage;
+
+        // Preview the uploaded image
+        function previewImage() {
+            const fileInput = document.getElementById('fileUpload');
+            const preview = document.getElementById('previewImage');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    uploadedImage = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Send the image to the Flask backend for prediction
+        async function predict() {
+            if (!uploadedImage) {
+                alert('Please upload an image first.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: uploadedImage }),
+                });
+
+                const result = await response.json();
+                document.getElementById('prediction').textContent = result.digit;
+                document.getElementById('confidence').textContent = 
+                    (result.confidence * 100).toFixed(2);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while predicting. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
